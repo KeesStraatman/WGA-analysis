@@ -7,7 +7,7 @@ This macro needs the plugin: Rolling Ball Background.
 
 ![](WGA_all.jpg)
 
-Download the WGA manual for help to install and run the macro.
+Download the [WGA manual](WGA_all.pdf) for help to install and run the macro.
 
 ## There are three alternative versions of this macro.
 
@@ -23,7 +23,7 @@ Download the WGA manual for help to install and run the macro.
 
 \- Version SEM optimized for SEM image analysis for Chris Fogarty, Helsinki.
 
-Download the WGA manual for help to install and run the macro.
+Download the [WGA manual](WGA_all.pdf) for help to install and run the macro.
 
 ## Download code
 
