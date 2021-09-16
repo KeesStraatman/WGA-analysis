@@ -1,0 +1,165 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//  This macro can be used to calculate cell area in in *.tif or *.jpg images of tissue samples 
+//  stained for cell walls. The user has the choice to analyse the whole image, using a saved ROI, 
+//  making one ROI to be used for all images or to draw a separate ROI for each image. 
+//  The macro can handle tif and jpg files. The result ROI images will be saved in jpg format.
+//  .
+//  27/06/2011: the user can chose to analyse "all cells", "rounded cells" (circularity=0.60-1.00)
+//  or "elongated cells" (circularity=0.00-0.59999). These values can be changed in the code if necessary
+//  as Ca and Cb. 
+//
+//  30/06/2011: allows images ending with *.TIFF and *.JPG can now be used.
+//  Optimized for images from Malgosia Kepczynska, University of Buckingham, UK
+//  Haematoxylin& eosin Y stained adipose tissue sections 
+//
+//  15/06/2012: Problem with file extension solved.
+//  21/06/2012: bugs with saved ROIs, multiple ROIs and non-tif or jpg files in directory solved.
+//
+//  Kees Straatman, CBS, University of Leicester,  21 June 2012. Version 6.
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+macro "Histo_"{
+	requires("1.42m"); 
+	B = false;
+	dir1 = getDirectory("Choose Source Directory ");
+	list = getFileList(dir1);
+	dir2 = getDirectory("Choose Destination Directory ");   
+	answer =false;
+	run("Set Measurements...", "area redirect=None decimal=3");
+
+	Cells=newArray("all cells","rounded cells","elongated cell");
+	Choice=newArray("whole image","saved ROI","select one ROI for all images","new ROI for each image", "several ROIs for each image");
+	
+	Dialog.create("Select");
+		Dialog.addChoice("Select what cell types you want to analyse",Cells);
+		Dialog.addChoice("Select  how the image has to be analysed",Choice);
+		Dialog.addMessage("If a saved ROI is used it has to be saved as 'Roifile.roi'");
+		Dialog.show();
+	cell=Dialog.getChoice();
+	answer=Dialog.getChoice();
+	
+
+	Ca = 0;
+	Cb = 1;
+	if (cell=="rounded cells") Ca=0.6;
+	if (cell=="elongated cells") Cb=0.59999;
+	
+	if (answer=="whole image") A = 1;
+	if (answer=="saved ROI") {
+		A = 2; B = true;
+		dirROI =  getDirectory("Select Directory containing ROI file");
+	}
+	if (answer=="select one ROI for all images") A = 3; //will later become A=2 when ROI is saved
+	if (answer=="new ROI for each image") A = 3;
+	if (answer=="several ROIs for each image") {A = 3; B = true;}
+	for (i=0; i<list.length; i++) {
+		c=1;
+		
+		do{
+			if (File.isDirectory(dir1+list[i])){}
+			// Check that the file is a file and not a directory
+			else{
+				path = dir1+list[i];
+				if ((endsWith(path, ".tif"))||(endsWith(path, ".TIF"))||(endsWith(path,".JPG"))||(endsWith(path,".jpg"))){ 
+					image = true;
+					if (A==1){
+						setBatchMode(true);
+						open(path);
+						title1 = getTitle;
+						title2 = File.nameWithoutExtension;
+						area(dir2, title1, title2, c);
+					} else{
+						if (A==2){
+							open(path);
+							title1 = getTitle;
+							title2 = File.nameWithoutExtension;
+							roiManager("Open",  dirROI+"Roifile"+c+".zip");
+							roiManager("select", 0);
+							title = "Message";
+							msg = "select in ROI and move it, then click \"OK\".";
+							waitForUser(title, msg);
+						}else{
+
+							if (A==3){
+								open(path);
+								title1 = getTitle;
+								title2 = File.nameWithoutExtension;
+								setTool("rectangle");
+								title = "Message";
+								msg = "make a ROI, then click \"OK\".";
+								waitForUser(title, msg);
+								if (answer=="select one ROI for all images"){
+									 A = 2;
+									roiManager("Add");
+									roiManager("Save", dir2+"Roifile"+c+".zip");
+									dirROI = dir2;
+								}
+							}
+						}
+					}
+					if (A!=1){
+						setBatchMode(true);
+						run("Copy");
+						run("Internal Clipboard");
+						saveAs("jpg", dir2+title2+"-ROI"+c);
+						selectWindow(title1);
+						close();
+						title1 = getTitle;
+						title2 = File.nameWithoutExtension;
+						area(dir2, title1, title2,c);
+						setBatchMode(false);
+					}
+					selectWindow("Results");
+					run("Close");
+					if(A==2){
+						selectWindow("ROI Manager");
+    						run("Close");
+					}
+					if (B==true) {
+						B = getBoolean("Do you want to analyse more ROI in this image?");
+						c=c+1;
+					}
+				}
+else image = false;
+			}
+		}
+		while (B == true);
+		if (image==true){
+			selectWindow("Summary");
+			saveAs("txt", dir2+"summary"+title2);
+			run("Close");
+		}
+		if ((answer=="several ROIs for each image")||(answer=="saved ROI")) B = true;
+			
+	}
+	
+}
+
+function area(dir2, title1, title2,i){
+	selectWindow(title1);
+	run("Smooth");
+	run("Smooth");
+	run("Subtract Background...", "rolling=20 light");
+	run("8-bit");
+	run("Find Edges");
+	run("Enhance Contrast", "saturated=0.4 normalize equalize");
+	run("Smooth");
+	setAutoThreshold("Percentile");
+	setAutoThreshold("Percentile dark");
+	run("Convert to Mask");
+	setAutoThreshold("Percentile");
+	setThreshold(0, 0);
+	run("Convert to Mask");
+	run("Close-");
+	run("Dilate");
+	run("Watershed");
+	run("Analyze Particles...", "size=25-Infinity circularity=0.00-1.00 show=Nothing display exclude clear summarize add");
+	roiManager("Save", dir2+ title2+"-RoiSet"+i+".zip");
+	selectWindow("Results");
+	saveAs("txt", dir2+title2+"-results"+i);
+	selectWindow(title1);
+	close();
+}
+
+
+
