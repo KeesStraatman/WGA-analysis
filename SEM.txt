@@ -1,0 +1,135 @@
+ ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//  This macro can be used to calculate cell area in in *.tif or *.jpg images of tissue samples 
+//  stained for cell walls. The user has the choice to analyse the whole image, using a saved ROI, 
+//  making one ROI to be used for all images or to draw a separate ROI for each image. 
+//  The macro can handle tif and jpg files. The result ROI images will be saved in jpg format.
+//  .
+//  27/06/2011: the user can chose to analyse "all cells", "rounded cells" (circularity=0.60-1.00)
+//  or "elongated cells" (circularity=0.00-0.59999). These values can be changed in the code if necessary
+//  as Ca and Cb. 
+//
+//  30/06/2011: allows images ending with *.TIFF and *.JPG can now be used.
+//  30/10/2011: Changed code to analyse SEM images on request (fogarty@mappi.helsinki.fi)
+//
+//  Kees Straatman, CBS, University of Leicester, October, 2011. 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+macro "SEM"{
+	requires("1.42m"); 
+	dir1 = getDirectory("Choose Source Directory ");
+	list = getFileList(dir1);
+	dir2 = getDirectory("Choose Destination Directory ");   
+	answer =false;
+	run("Set Measurements...", "area redirect=None decimal=3");
+
+	Cells=newArray("all cells","rounded cells","elongated cell");
+	Choice=newArray("whole image","saved ROI","select one ROI for all images","new ROI for each image");
+	
+	Dialog.create("Select");
+		Dialog.addChoice("Select what cell types you want to analyse",Cells);
+		Dialog.addChoice("Select  how the image has to be analysed",Choice);
+		Dialog.addMessage("If a saved ROI is used it has to be saved as 'Roifile.zip'");
+		Dialog.show();
+	cell=Dialog.getChoice();
+	answer=Dialog.getChoice();
+	
+
+	Ca = 0;
+	Cb = 1;
+	if (cell=="rounded cells") Ca=0.6;
+	if (cell=="elongated cells") Cb=0.59999;
+	
+	if (answer=="whole image") A = 1;
+	if (answer=="saved ROI") {
+		A = 2;
+		dirROI =  getDirectory("Select Directory containing ROI file");
+	}
+	if (answer=="select one ROI for all images") A = 3; //will later become A=2 when ROI is saved
+	if (answer=="new ROI for each image") A = 3;
+	
+	for (i=0; i<list.length; i++) {
+		if (File.isDirectory(dir1+list[i])){}
+		// Check that the file is a file and not a directory
+		else{
+			path = dir1+list[i];
+			if ((endsWith(path, ".tif"))||(endsWith(path,".jpg"))||(endsWith(path, ".TIF"))||(endsWith(path, ".JPG"))){
+				if (A==1){
+					setBatchMode(true);
+					open(path);
+					title1 = getTitle;
+					title2 = File.nameWithoutExtension;
+					title1 = getTitle;
+					title2 = File.nameWithoutExtension;
+					area(dir2, title1, title2);
+				} else{
+					if (A==2){
+						open(path);
+						title1 = getTitle;
+						title2 = File.nameWithoutExtension;
+						roiManager("Open",  dirROI+"Roifile.zip");
+						roiManager("select", 0);
+						title = "Message";
+						msg = "select in ROI and move it, then click \"OK\".";
+						waitForUser(title, msg);
+					}else{
+
+						if (A==3){
+							open(path);
+							title1 = getTitle;
+							title2 = File.nameWithoutExtension;
+							setTool("rectangle");
+							title = "Message";
+							msg = "make a ROI, then click \"OK\".";
+							waitForUser(title, msg);
+							if (answer=="select one ROI for all images"){
+								 A = 2;
+								roiManager("Add");
+								roiManager("Save", dir2+"Roifile.zip");
+								dirROI = dir2;
+							}
+						}
+					}
+				}
+				if (A!=1){
+					setBatchMode(true);
+					run("Copy");
+					run("Internal Clipboard");
+					saveAs("jpg", dir2+title2+"-ROI");
+					selectWindow(title1);
+					close();
+					title1 = getTitle;
+					title2 = File.nameWithoutExtension;
+					area(dir2, title1, title2);
+					setBatchMode(false);
+				}
+			}
+		}
+	}
+	selectWindow("Results");
+	run("Close");
+	selectWindow("Summary");
+	saveAs("txt", dir2+"summary");
+	run("Close");
+	if(A==2){
+		selectWindow("ROI Manager");
+    		run("Close");
+	}
+	
+}
+
+function area(dir2, title1, title2){
+	run("8-bit");
+	run("Subtract Background...", "rolling=30");
+	setAutoThreshold("Mean dark");
+	run("Convert to Mask");
+	run("Analyze Particles...", "size=1-Infinity circularity="+Ca+"-"+Cb+" show=Nothing display exclude clear include summarize add");
+	roiManager("Save", dir2+ title2+"-RoiSet.zip");
+	roiManager("Delete");
+	selectWindow("Results");
+	saveAs("txt", dir2+title2+"-results");
+	selectWindow(title1);
+	close();
+}
+
+
+
