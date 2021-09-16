@@ -2,7 +2,7 @@
 
 ## **Identify cell area in WGA stained cells**
 
-The WGA macro can be used to calculate cell area in *.tif or *.jpg images of tissue samples stained for cell walls. It was written for WGA stained cells. The user has the choice to analyse the whole image, using a saved ROI, making one ROI to be used for all images or to draw a seperate ROI for each image. The result ROI images will be saved in jpg format and the ROI manager results will be saved as well (as zip file) to allow control over the results.
+The [WGA macro](WGA.txt) can be used to calculate cell area in *.tif or *.jpg images of tissue samples stained for cell walls. It was written for WGA stained cells. The user has the choice to analyse the whole image, using a saved ROI, making one ROI to be used for all images or to draw a seperate ROI for each image. The result ROI images will be saved in jpg format and the ROI manager results will be saved as well (as zip file) to allow control over the results.
 This macro needs the plugin: Rolling Ball Background.
 
 ![](WGA_all.jpg)
@@ -13,15 +13,15 @@ Download the [WGA manual](WGA_all.pdf) for help to install and run the macro.
 
 ![](WGA3.1.jpg)
 
-\- Version 3.1 was optimized for images from Dr Wei Ni, Diabetes Center, University of California, San Francisco.
+\- [Version 3.1](WGA3.1.txt) was optimized for images from Dr Wei Ni, Diabetes Center, University of California, San Francisco.
 
 ![](Histo_2.jpg)
 
-\- Version Histo_2 optimized for images from Malgosia Kepczynska, University of Buckingham, UK using Haematoxylin& eosin Y stained adipose tissue sections.
+\- [Version Histo_6](Histo_6.txt) optimized for images from Malgosia Kepczynska, University of Buckingham, UK using Haematoxylin& eosin Y stained adipose tissue sections.
 
 ![](SEM.jpg)
 
-\- Version SEM optimized for SEM image analysis for Chris Fogarty, Helsinki.
+\- [Version SEM](SEM.txt) optimized for SEM image analysis for Chris Fogarty, Helsinki.
 
 Download the [WGA manual](WGA_all.pdf) for help to install and run the macro.
 
